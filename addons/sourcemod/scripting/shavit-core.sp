@@ -1542,7 +1542,7 @@ public int Native_FinishMap(Handle handler, int numParams)
 			char sOffsetMessage[64];
 			char sOffsetDistance[8];
 			FormatEx(sOffsetDistance, 8, "%.1f", gA_Timers[client].fOffsetDistance[Zone_End]);
-			FormatEx(sOffsetMessage, 64, "%T", "DebugOffsets", client, gS_ChatStrings.sVariable, gA_Timers[client].fOffset[Zone_End], gS_ChatStrings.sText, gS_ChatStrings.sVariable, sOffsetDistance, gS_ChatStrings.sText);
+			FormatEx(sOffsetMessage, 64, "%T", "DebugOffsets", client, gA_Timers[client].fOffset[Zone_End], sOffsetDistance);
 			PrintToConsole(client, "%s", sOffsetMessage);
 		}
 	}
@@ -2840,7 +2840,7 @@ public void Shavit_OnLeaveZone(int client, int type, int track, int id, int enti
 				char sOffsetMessage[64];
 				char sOffsetDistance[8];
 				FormatEx(sOffsetDistance, 8, "%.1f", gA_Timers[client].fOffsetDistance[type]);
-				FormatEx(sOffsetMessage, 64, "%T", "DebugOffsets", client, gS_ChatStrings.sVariable, gA_Timers[client].fOffset[type], gS_ChatStrings.sText, gS_ChatStrings.sVariable, sOffsetDistance, gS_ChatStrings.sText);
+				FormatEx(sOffsetMessage, 64, "%T", "DebugOffsets", client, gA_Timers[client].fOffset[type], sOffsetDistance);
 				PrintToConsole(client, "%s", sOffsetMessage);
 			}
 		}
