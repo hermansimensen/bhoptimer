@@ -137,8 +137,6 @@
 				"windows"	"\x55\x8B\xEC\x56\xFF\x75\x14\x68\x2A\x2A\x2A\x2A"
 				"linux"		"@_ZN14CEntityBlocker6CreateERK6VectorS2_S2_P11CBaseEntityb"
 			}
-
-			"DoAnimationEvent"
 		
 			// search string: "ReloadEffect" to find CWeaponCSBase::SendReloadEvents and then DoAnimationEvent is probably the second to last function called there.
 			"Player::DoAnimationEvent"
