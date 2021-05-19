@@ -59,7 +59,8 @@ char gS_ZoneNames[][] =
 	"Easybhop Zone", // forces easybhop whether if the player is in non-easy styles or if the server has different settings
 	"Slide Zone", // allows players to slide, in order to fix parts like the 5th stage of bhop_arcane
 	"Custom Airaccelerate", // custom sv_airaccelerate inside this,
-	"Stage Zone" // shows time when entering zone
+	"Stage Zone", // shows time when entering zone
+	"Block Zone (Prevent Movement)" // prevent player movement. 
 };
 
 enum struct zone_cache_t
@@ -172,6 +173,8 @@ Handle gH_Forwards_EnterZone = null;
 Handle gH_Forwards_LeaveZone = null;
 Handle gH_Forwards_StageMessage = null;
 
+Handle gH_CreateEntityBlocker = null;
+
 // kz support
 float gF_ClimbButtonCache[MAXPLAYERS+1][TRACKS_SIZE][2][3]; // 0 - location, 1 - angles
 int gI_KZButtons[TRACKS_SIZE][2]; // 0 - start, 1 - end
@@ -274,6 +277,21 @@ public void OnPluginStart()
 	}
 
 	HookEvent("player_spawn", Player_Spawn);
+	
+	// vcall stuff
+	GameData gamedata = new GameData("shavit.games");
+
+	StartPrepSDKCall(SDKCall_Static);
+	PrepSDKCall_SetFromConf(gamedata, SDKConf_Signature, "CEntityBlocker::Create");
+	PrepSDKCall_AddParameter(SDKType_Vector, SDKPass_ByRef);
+	PrepSDKCall_AddParameter(SDKType_Vector, SDKPass_ByRef);
+	PrepSDKCall_AddParameter(SDKType_Vector, SDKPass_ByRef);
+	PrepSDKCall_AddParameter(SDKType_CBaseEntity, SDKPass_ByValue, VDECODE_FLAG_ALLOWNULL);
+	PrepSDKCall_AddParameter(SDKType_Bool, SDKPass_ByValue);
+	PrepSDKCall_SetReturnInfo(SDKType_CBaseEntity, SDKPass_ByValue);
+	gH_CreateEntityBlocker = EndPrepSDKCall();
+
+	delete gamedata;
 
 	// forwards
 	gH_Forwards_EnterZone = CreateGlobalForward("Shavit_OnEnterZone", ET_Event, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell, Param_Cell);
@@ -3189,6 +3207,11 @@ float Abs(float input)
 	return input;
 }
 
+public int CreateEntityBlocker(float origin[3], float mins[3], float maxs[3], int owner, int vphysics)
+{
+	return SDKCall(gH_CreateEntityBlocker, origin, mins, maxs, owner, vphysics);
+}
+
 public void CreateZoneEntities()
 {
 	for(int i = 0; i < gI_MapZones; i++)
@@ -3217,6 +3240,44 @@ public void CreateZoneEntities()
 
 		if(!gA_ZoneCache[i].bZoneInitialized)
 		{
+			continue;
+		}
+		
+		if(gA_ZoneCache[i].iZoneType == Zone_Block)
+		{
+			float distance_x = Abs(gV_MapZones[i][0][0] - gV_MapZones[i][1][0]) / 2;
+			float distance_y = Abs(gV_MapZones[i][0][1] - gV_MapZones[i][1][1]) / 2;
+			float distance_z = Abs(gV_MapZones[i][0][2] - gV_MapZones[i][1][2]) / 2;
+
+			float min[3];
+			min[0] = -distance_x;
+			min[1] = -distance_y;
+			min[2] = -distance_z;
+
+			float max[3];
+			max[0] = distance_x;
+			max[1] = distance_y;
+			max[2] = distance_z;
+
+			int entity = CreateEntityBlocker(gV_ZoneCenter[i], min, max, -1, true);
+			if(!DispatchSpawn(entity))
+			{
+				LogError("\"entity_blocker\" spawning failed, map %s.", gS_Map);
+				continue;
+			}
+
+			TeleportEntity(entity, gV_ZoneCenter[i], NULL_VECTOR, NULL_VECTOR);
+			ActivateEntity(entity);
+
+			
+			gI_EntityZone[entity] = i;
+			gA_ZoneCache[i].iEntityID = entity;
+			
+			char sTargetname[32];
+			FormatEx(sTargetname, 32, "shavit_zones_%d_%d", gA_ZoneCache[i].iZoneTrack, gA_ZoneCache[i].iZoneType);
+			DispatchKeyValue(entity, "targetname", sTargetname);
+			
+			gB_ZonesCreated = true;
 			continue;
 		}
 

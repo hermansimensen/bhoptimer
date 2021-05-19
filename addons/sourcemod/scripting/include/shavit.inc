@@ -110,6 +110,7 @@ enum
 	Zone_Slide,
 	Zone_Airaccelerate,
 	Zone_Stage,
+	Zone_Block,
 	ZONETYPES_SIZE
 };
 
